@@ -1,26 +1,46 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import WelcomeScreen from "./pages/WelcomeScreen";
+import styled from "styled-components";
+import "./index.css";
+import pageType from "./models/pageType";
+import GameScreen from "./pages/GameScreen";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+const AppContainer = styled.div`
+  padding: 20px;
+`;
+
+const usePage = () => {
+  const [currentPage, setCurrentPage] = useState(pageType.GAME_SCREEN);
+
+  const changePage = (pageType) => {
+    setCurrentPage(pageType);
+  };
+
+  const goToGame = () => {
+    changePage(pageType.GAME_SCREEN);
+  };
+
+  return [currentPage, goToGame];
+};
+
+const App = () => {
+  const [currentPage, goToGame] = usePage();
+
+  let page = null;
+
+  if (currentPage === pageType.MAIN_SCREEN) {
+    page = (
+      <WelcomeScreen
+        onPlayAgainstComputer={() => goToGame()}
+        onPlayAgainstFriend={() => goToGame()}
+        onCreateRoom={() => goToGame()}
+      />
+    );
+  } else if (currentPage === pageType.GAME_SCREEN) {
+    page = <GameScreen />;
+  }
+
+  return <AppContainer>{page}</AppContainer>;
+};
 
 export default App;
