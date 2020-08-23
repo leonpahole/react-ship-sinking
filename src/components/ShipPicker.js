@@ -3,13 +3,14 @@ import styled from "styled-components";
 import PlayField from "./PlayField";
 import AvailableShips from "./AvailableShips";
 import {
-  cellState,
+  CellState,
   initialState,
   getCellPath,
   canCellBePlaced,
   getShipPathAtCell,
-} from "../models/cellState";
-import { ships } from "../models/ships";
+} from "../models/CellState";
+import { initialShips } from "../models/Ships";
+import { tabletBreakpoint } from "../styles";
 
 const Container = styled.div`
   display: flex;
@@ -20,14 +21,24 @@ const Container = styled.div`
 
 const MainContainer = styled.div`
   display: flex;
+
+  @media (max-width: ${tabletBreakpoint}) {
+    flex-direction: column;
+  }
 `;
 
-const useShipPicker = (width, height) => {
-  const [stateTable, setStateTable] = useState(initialState(width, height));
+const useShipPicker = (width, height, pickedStateTable) => {
+  const shipsAlreadyPlaced = pickedStateTable != null;
+
+  const [stateTable, setStateTable] = useState(
+    shipsAlreadyPlaced ? pickedStateTable : initialState(width, height)
+  );
   const [cellClicked, setCellClicked] = useState(null);
   const [cellHovered, setCellHovered] = useState(null);
-  const [availableShips, setAvailableShips] = useState(ships);
-  const [allShipsPlaced, setAllShipsPlaced] = useState(false);
+  const [availableShips, setAvailableShips] = useState(
+    initialShips(shipsAlreadyPlaced)
+  );
+  const [allShipsPlaced, setAllShipsPlaced] = useState(shipsAlreadyPlaced);
 
   const getMaxShipLength = () => {
     if (allShipsPlaced) {
@@ -67,7 +78,7 @@ const useShipPicker = (width, height) => {
         }
       }
 
-      setStateOnPlacingCells(cellState.SHIP_PLACED, true);
+      setStateOnPlacingCells(CellState.SHIP_PLACED, true);
       setAvailableShips(availableShips);
 
       setCellClicked(null);
@@ -85,11 +96,11 @@ const useShipPicker = (width, height) => {
   );
 
   const setStateOnPlacingCells = useCallback(
-    (state = cellState.UNTOUCHED, withClickedCell = false) => {
+    (state = CellState.UNTOUCHED, withClickedCell = false) => {
       for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
           if (
-            stateTable[x][y] === cellState.SHIP_PLACING &&
+            stateTable[x][y] === CellState.SHIP_PLACING &&
             (withClickedCell || !(x === cellClicked.x && y === cellClicked.y))
           ) {
             updateStateTable(x, y, state);
@@ -97,20 +108,24 @@ const useShipPicker = (width, height) => {
         }
       }
     },
-    [cellClicked, height, stateTable, width]
+    [cellClicked, height, stateTable, width, updateStateTable]
   );
 
   const cancelPlacement = useCallback(() => {
-    setStateOnPlacingCells(cellState.UNTOUCHED, true);
+    setStateOnPlacingCells(CellState.UNTOUCHED, true);
     setCellClicked(null);
     setCellHovered(null);
   }, [setStateOnPlacingCells]);
 
   const onCellClicked = (cell) => {
+    if (allShipsPlaced) {
+      return;
+    }
+
     if (cellClicked == null) {
       if (canCellBePlaced(cell.x, cell.y, stateTable) === true) {
         setCellClicked({ x: cell.x, y: cell.y });
-        updateStateTable(cell.x, cell.y, cellState.SHIP_PLACING);
+        updateStateTable(cell.x, cell.y, CellState.SHIP_PLACING);
       }
     } else {
       const path = getCellPath(
@@ -138,13 +153,13 @@ const useShipPicker = (width, height) => {
         return;
       }
 
-      setStateOnPlacingCells(cellState.UNTOUCHED);
+      setStateOnPlacingCells(CellState.UNTOUCHED);
     }
 
     const path = getCellPath(cellClicked, cell, stateTable, getMaxShipLength());
     if (path != null) {
       for (let i = 0; i < path.length; i++) {
-        updateStateTable(path[i].x, path[i].y, cellState.SHIP_PLACING);
+        updateStateTable(path[i].x, path[i].y, CellState.SHIP_PLACING);
       }
     }
 
@@ -166,7 +181,7 @@ const useShipPicker = (width, height) => {
       if (shipPath != null) {
         // set all states to "untouched" where the ship used to be
         for (let i = 0; i < shipPath.length; i++) {
-          updateStateTable(shipPath[i].x, shipPath[i].y, cellState.UNTOUCHED);
+          updateStateTable(shipPath[i].x, shipPath[i].y, CellState.UNTOUCHED);
         }
 
         // add ship to capacity ships
@@ -209,7 +224,15 @@ const useShipPicker = (width, height) => {
   ];
 };
 
-const ShipPicker = ({ width, height, onReady }) => {
+const ShipPicker = ({
+  width,
+  height,
+  onReady,
+  enemyReady,
+  pickedStateTable,
+  amIReady,
+  enemyConnected,
+}) => {
   const [
     onCellClicked,
     onCellHover,
@@ -217,11 +240,26 @@ const ShipPicker = ({ width, height, onReady }) => {
     stateTable,
     availableShips,
     allShipsPlaced,
-  ] = useShipPicker(width, height);
+  ] = useShipPicker(width, height, pickedStateTable);
+
+  let readyState = "";
+  if (!enemyConnected) {
+    readyState = "Enemy not connected yet. ";
+  } else {
+    if (enemyReady) {
+      readyState = "Enemy is ready. ";
+    } else {
+      readyState = "Enemy is picking. ";
+    }
+  }
+
+  if (amIReady) {
+    readyState += "You are ready!";
+  }
 
   return (
     <Container>
-      <h2>Pick your ships</h2>
+      <p>Pick your ships. Choose carefully!</p>
 
       <MainContainer>
         <PlayField
@@ -234,8 +272,15 @@ const ShipPicker = ({ width, height, onReady }) => {
         />
         <AvailableShips ships={availableShips} />
       </MainContainer>
-      <button disabled={!allShipsPlaced} onClick={() => onReady(stateTable)}>
-        I am ready!
+      <p>{readyState}</p>
+      <button
+        className={allShipsPlaced ? "background-success" : ""}
+        disabled={!allShipsPlaced}
+        onClick={() => onReady(stateTable)}
+      >
+        {amIReady
+          ? "Wait, let me change my pick!"
+          : "I am ready! Let's do this!"}
       </button>
     </Container>
   );

@@ -1,4 +1,4 @@
-export const cellState = {
+export const CellState = {
   UNTOUCHED: 1,
   HIT: 2,
   MISSED: 3,
@@ -14,7 +14,7 @@ export const initialState = (width, height) => {
     field[w] = new Array(height);
 
     for (let h = 0; h < height; h++) {
-      field[w][h] = cellState.UNTOUCHED;
+      field[w][h] = CellState.UNTOUCHED;
     }
   }
 
@@ -22,7 +22,7 @@ export const initialState = (width, height) => {
 };
 
 export const canCellBePlaced = (x, y, stateTable) => {
-  if (stateTable[x][y] === cellState.SHIP_PLACED) {
+  if (stateTable[x][y] === CellState.SHIP_PLACED) {
     return false;
   }
 
@@ -30,19 +30,19 @@ export const canCellBePlaced = (x, y, stateTable) => {
   const height = stateTable[0].length;
 
   // left
-  if (x > 0 && stateTable[x - 1][y] === cellState.SHIP_PLACED) {
+  if (x > 0 && stateTable[x - 1][y] === CellState.SHIP_PLACED) {
     return false;
   }
   // right
-  else if (x < width - 1 && stateTable[x + 1][y] === cellState.SHIP_PLACED) {
+  else if (x < width - 1 && stateTable[x + 1][y] === CellState.SHIP_PLACED) {
     return false;
   }
   // up
-  else if (y > 0 && stateTable[x][y - 1] === cellState.SHIP_PLACED) {
+  else if (y > 0 && stateTable[x][y - 1] === CellState.SHIP_PLACED) {
     return false;
   }
   // down
-  else if (y < height - 1 && stateTable[x][y + 1] === cellState.SHIP_PLACED) {
+  else if (y < height - 1 && stateTable[x][y + 1] === CellState.SHIP_PLACED) {
     return false;
   }
 
@@ -113,7 +113,7 @@ export const getCellPath = (
 
 export const getShipPathAtCell = ({ x, y }, stateTable) => {
   // check if this cell has ship placed
-  if (stateTable[x][y] !== cellState.SHIP_PLACED) {
+  if (stateTable[x][y] !== CellState.SHIP_PLACED) {
     // no
     return null;
   }
@@ -126,7 +126,7 @@ export const getShipPathAtCell = ({ x, y }, stateTable) => {
   // go left as much as possible until end of table or no more ship
   for (
     let xi = x - 1;
-    xi >= 0 && stateTable[xi][y] === cellState.SHIP_PLACED;
+    xi >= 0 && stateTable[xi][y] === CellState.SHIP_PLACED;
     xi--
   ) {
     shipCells.push({ x: xi, y });
@@ -135,7 +135,7 @@ export const getShipPathAtCell = ({ x, y }, stateTable) => {
   // go right as much as possible until end of table or no more ship
   for (
     let xi = x + 1;
-    xi < width && stateTable[xi][y] === cellState.SHIP_PLACED;
+    xi < width && stateTable[xi][y] === CellState.SHIP_PLACED;
     xi++
   ) {
     shipCells.push({ x: xi, y });
@@ -144,7 +144,7 @@ export const getShipPathAtCell = ({ x, y }, stateTable) => {
   // go up as much as possible until end of table or no more ship
   for (
     let yi = y - 1;
-    yi >= 0 && stateTable[x][yi] === cellState.SHIP_PLACED;
+    yi >= 0 && stateTable[x][yi] === CellState.SHIP_PLACED;
     yi--
   ) {
     shipCells.push({ x, y: yi });
@@ -153,7 +153,7 @@ export const getShipPathAtCell = ({ x, y }, stateTable) => {
   // go down as much as possible until end of table or no more ship
   for (
     let yi = y + 1;
-    yi < height && stateTable[x][yi] === cellState.SHIP_PLACED;
+    yi < height && stateTable[x][yi] === CellState.SHIP_PLACED;
     yi++
   ) {
     shipCells.push({ x, y: yi });

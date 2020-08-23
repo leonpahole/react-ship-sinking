@@ -4,10 +4,8 @@ import ShipCell from "./ShipCell";
 import styled from "styled-components";
 
 const Table = styled.table`
-  border-radius: 10px;
   margin: 0px 30px 30px 30px;
-  border-collapse: collapse;
-  border-spacing: 0;
+  width: unset;
 `;
 
 const PlayField = ({

@@ -4,36 +4,45 @@ import styled from "styled-components";
 const Container = styled.div`
   display: flex;
   align-items: center;
-  margin: 0px 10px 10px 10px;
+  margin: 0px 10px 10px 0px;
 `;
 
 const Table = styled.table`
   border-radius: 10px;
   margin-right: 10px;
-  border-collapse: collapse;
-  border-spacing: 0;
+  width: unset;
 `;
 
 const Td = styled.td`
-  width: 30px;
-  height: 30px;
-  border: 1px solid black;
-  background-color: orange;
+  width: 40px;
+  height: 40px;
 `;
 
+const capacityToBadgeClass = (capacity) => {
+  if (capacity > 0) {
+    return "secondary";
+  }
+
+  return "success";
+};
+
 const AvailableShip = ({ length, capacity, currentCapacity }) => {
+  const remainingShipsToPlace = capacity - currentCapacity;
+
   return (
     <Container>
       <Table>
         <tbody>
           <tr>
             {Array.from({ length }, (_, x) => (
-              <Td key={x} />
+              <Td className="border border-primary border-4" key={x} />
             ))}
           </tr>
         </tbody>
       </Table>
-      x {capacity - currentCapacity}
+      <span className={`badge ${capacityToBadgeClass(remainingShipsToPlace)}`}>
+        x {remainingShipsToPlace}
+      </span>
     </Container>
   );
 };

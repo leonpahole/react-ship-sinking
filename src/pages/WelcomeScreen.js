@@ -1,34 +1,58 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import { mobileBreakpoint, tabletBreakpoint, Button } from "../styles";
 
 const Container = styled.div`
   text-align: center;
 `;
 
 const OptionsContainer = styled.div`
+  margin-top: 30px;
   display: flex;
   justify-content: center;
+
+  @media (max-width: ${tabletBreakpoint}) {
+    flex-direction: column;
+  }
 `;
 
 const OptionBox = styled.div`
   padding: 30px;
-  border: 1px solid black;
-  border-radius: 10px;
   margin: 10px;
+`;
+
+const InputButtonContainer = styled.div`
+  display: flex;
+
+  @media (max-width: ${mobileBreakpoint}) {
+    flex-direction: column;
+  }
+`;
+
+const JoinButton = styled(Button)`
+  margin-left: 10px;
+
+  @media (max-width: ${mobileBreakpoint}) {
+    margin-left: auto;
+    margin-top: 10px;
+  }
 `;
 
 const WelcomeScreen = ({
   onPlayAgainstComputer,
   onPlayAgainstFriend,
   onCreateRoom,
+  playerName,
+  onNameChange,
 }) => {
   const [roomCode, setRoomCode] = useState();
 
   return (
     <Container>
-      <h1>Ship sinking</h1>
+      <p>Hello there, {playerName}. I've been expecting you.</p>
+      <button onClick={onNameChange}>Change name</button>
 
-      <OptionsContainer>
+      <OptionsContainer className="child-borders child-shadows-hover">
         <OptionBox>
           <h4>Play against computer</h4>
           <button onClick={() => onPlayAgainstComputer()}>Start</button>
@@ -37,16 +61,23 @@ const WelcomeScreen = ({
         <OptionBox>
           <h4>Play against your friend</h4>
           <p>Enter room code ...</p>
-          <input onChange={(e) => setRoomCode(e.target.value)} type="text" />
 
-          <br />
-          <br />
+          <InputButtonContainer>
+            <input
+              onChange={(e) => setRoomCode(e.target.value)}
+              type="text"
+              placeholder="Room code!"
+            />
+            <JoinButton onClick={() => onPlayAgainstFriend(roomCode)}>
+              Join
+            </JoinButton>
+          </InputButtonContainer>
 
-          <button onClick={() => onPlayAgainstFriend(roomCode)}>Join</button>
+          <p>... or ...</p>
 
-          <p>... or create new room</p>
-
-          <button onClick={() => onCreateRoom()}>Create</button>
+          <button onClick={() => onCreateRoom()}>
+            Create my awesome room!
+          </button>
         </OptionBox>
       </OptionsContainer>
     </Container>

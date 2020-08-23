@@ -1,65 +1,40 @@
-import React, { useState, useCallback } from "react";
+import React from "react";
 import PlayField from "./PlayField";
 import styled from "styled-components";
-import { shootCell } from "../services/mockShipSinkingService";
-import { cellState, initialState } from "../models/cellState";
+import { GameState } from "../models/GameState";
 
-const Container = styled.table`
+const Container = styled.div`
   display: flex;
   justify-content: center;
 `;
 
-const useGame = (width, height, st) => {
-  const [myStateTable, setMyStateTable] = useState([...st]);
-  const [enemyStateTable, setEnemyStateTable] = useState(
-    initialState(width, height)
-  );
-  const [isMyTurn, setIsMyTurn] = useState(true);
-
-  const updateStateTable = useCallback(
-    (x, y, state, mine = true) => {
-      let stateTableCopy;
-      if (mine) {
-        stateTableCopy = [...myStateTable];
-      } else {
-        stateTableCopy = [...enemyStateTable];
-      }
-
-      stateTableCopy[x][y] = state;
-
-      if (mine) {
-        setMyStateTable(stateTableCopy);
-      } else {
-        setEnemyStateTable(stateTableCopy);
-      }
-    },
-    [myStateTable, enemyStateTable]
-  );
-
+const useGame = (isMyTurn, onCellShot, gState) => {
   const onCellClicked = (cell) => {
+    if (gState === GameState.FINISHED) {
+      return;
+    }
+
     if (isMyTurn === false) {
       return;
     }
 
-    const hit = shootCell(cell.x, cell.y);
-    let state = cellState.MISSED;
-    if (hit) {
-      state = cellState.HIT;
-    }
-
-    updateStateTable(cell.x, cell.y, state, false);
-    setIsMyTurn(false);
+    onCellShot(cell);
   };
 
-  return [isMyTurn, myStateTable, enemyStateTable, onCellClicked];
+  return [onCellClicked];
 };
 
-const GameInProgress = ({ width, height, stateTable }) => {
-  const [isMyTurn, myStateTable, enemyStateTable, onCellClicked] = useGame(
-    width,
-    height,
-    stateTable
-  );
+const GameInProgress = ({
+  width,
+  height,
+  myStateTable,
+  enemyStateTable,
+  isMyTurn,
+  onCellShot,
+  gState,
+  hasWon,
+}) => {
+  const [onCellClicked] = useGame(isMyTurn, onCellShot, gState);
 
   return (
     <div>
@@ -73,6 +48,7 @@ const GameInProgress = ({ width, height, stateTable }) => {
         />
       </Container>
       <p>{isMyTurn && "Your turn"}</p>
+      <p>{gState === GameState.FINISHED && "Finished won"}</p>
     </div>
   );
 };
