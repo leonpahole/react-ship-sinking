@@ -2,9 +2,14 @@ import io from "socket.io-client";
 import { GameEvent } from "../models/GameEvent";
 let socket;
 
-export const initiateSocket = (roomId, playerId, cb) => {
+export const initiateSocket = (roomId, playerId, playerName, cb) => {
   socket = io(
-    "http://localhost:8080/room?roomId=" + roomId + "&playerId=" + playerId
+    "http://localhost:8080/room?roomId=" +
+      roomId +
+      "&playerId=" +
+      playerId +
+      "&playerName=" +
+      playerName
   );
 
   socket.on(GameEvent.CONNECT, cb);

@@ -8,6 +8,17 @@ const Table = styled.table`
   width: unset;
 `;
 
+const PlayFieldContainer = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+`;
+
+const PlayerNameHeading = styled.h4`
+  margin: unset;
+  margin-bottom: 10px;
+`;
+
 const PlayField = ({
   width,
   height,
@@ -15,29 +26,33 @@ const PlayField = ({
   onCellClicked,
   onCellHover,
   onCellRightClicked,
+  playerName,
 }) => {
   return (
-    <Table>
-      <tbody>
-        {Array.from({ length: width }, (_, y) => (
-          <tr key={y}>
-            {Array.from({ length: height }, (_, x) => (
-              <ShipCell
-                key={x + "_" + y}
-                x={x}
-                y={y}
-                state={stateTable[x][y]}
-                onClick={(x, y) => onCellClicked && onCellClicked({ x, y })}
-                onHover={(x, y) => onCellHover && onCellHover({ x, y })}
-                onRightClick={(x, y) =>
-                  onCellRightClicked && onCellRightClicked({ x, y })
-                }
-              />
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+    <PlayFieldContainer>
+      <PlayerNameHeading>{playerName}</PlayerNameHeading>
+      <Table>
+        <tbody>
+          {Array.from({ length: width }, (_, y) => (
+            <tr key={y}>
+              {Array.from({ length: height }, (_, x) => (
+                <ShipCell
+                  key={x + "_" + y}
+                  x={x}
+                  y={y}
+                  state={stateTable[x][y]}
+                  onClick={(x, y) => onCellClicked && onCellClicked({ x, y })}
+                  onHover={(x, y) => onCellHover && onCellHover({ x, y })}
+                  onRightClick={(x, y) =>
+                    onCellRightClicked && onCellRightClicked({ x, y })
+                  }
+                />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </PlayFieldContainer>
   );
 };
 

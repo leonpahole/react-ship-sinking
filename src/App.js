@@ -175,6 +175,7 @@ const App = () => {
       <GameScreen
         roomId={roomId}
         playerId={playerId}
+        playerName={playerName}
         onLeaveGame={onLeaveGame}
       />
     );

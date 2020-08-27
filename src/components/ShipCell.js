@@ -5,18 +5,18 @@ import { CellState } from "../models/CellState";
 const cellStateToColor = (state) => {
   switch (state) {
     case CellState.DESTROYED:
-      return "red";
+      return "background-danger";
     case CellState.HIT:
-      return "orange";
+      return "background-warning";
     case CellState.MISSED:
-      return "gray";
+      return "background-primary";
     case CellState.SHIP:
     case CellState.SHIP_PLACED:
-      return "#838383";
+      return "background-success";
     case CellState.SHIP_PLACING:
-      return "#d9d9d8";
+      return "background-primary";
     default:
-      return "white";
+      return "background-secondary";
   }
 };
 
@@ -42,12 +42,13 @@ const Cell = styled.td`
   width: 40px;
   height: 40px;
   cursor: pointer;
-  background-color: ${(props) => cellStateToColor(props.state)};
 `;
 
 const ShipCell = ({ x, y, state, onClick, onHover, onRightClick }) => (
   <Cell
-    className={`border border-4 ${cellStateToBorderClass(state)}`}
+    className={`border border-4 ${cellStateToBorderClass(
+      state
+    )} ${cellStateToColor(state)}`}
     key={x + "_" + y}
     state={state}
     onClick={() => onClick && onClick(x, y)}

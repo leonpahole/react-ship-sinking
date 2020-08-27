@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { GameState } from "../models/GameState";
 import GameInProgress from "../components/GameInProgress";
 import ShipPicker from "../components/ShipPicker";
@@ -12,18 +12,25 @@ import {
   sendGameEvent,
 } from "../services/gameSocket";
 import LoadingScreen from "./LoadingScreen";
+import ChatWindow from "../components/ChatWindow";
+import useSound from "use-sound";
+
+import destroySound from "../assets/sounds/destroy.mp3";
+import hitSound from "../assets/sounds/hit.mp3";
+import missSound from "../assets/sounds/miss.mp3";
 
 const WIDTH = 10,
   HEIGHT = 10;
 
 const RoomCodeParagraph = styled.p`
   text-align: center;
+  cursor: pointer;
 `;
 
 const LeaveButton = styled.label`
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   background: #deefff;
 `;
 
@@ -36,7 +43,7 @@ const ModalButtonsContainer = styled.div`
   justify-content: center;
 `;
 
-const useGame = (roomId, playerId, onLeaveGame) => {
+const useGame = (roomId, playerId, playerName, onLeaveGame) => {
   const [state, setState] = useState(null);
   const [enemyReady, setEnemyReady] = useState(false);
   const [myStateTable, setMyStateTable] = useState(null);
@@ -45,6 +52,13 @@ const useGame = (roomId, playerId, onLeaveGame) => {
   const [hasWon, setHasWon] = useState(false);
   const [amIReady, setAmIReady] = useState(false);
   const [enemyConnected, setIsEnemyConnected] = useState(false);
+  const [isComputer, setIsComputer] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [enemyName, setEnemyName] = useState(null);
+
+  const [missSoundAudio] = useState(new Audio(missSound));
+  const [hitSoundAudio] = useState(new Audio(hitSound));
+  const [destroySoundAudio] = useState(new Audio(destroySound));
 
   const updateStateTable = (pointUpdates, mine = true) => {
     if (mine) {
@@ -95,8 +109,30 @@ const useGame = (roomId, playerId, onLeaveGame) => {
     sendGameEvent(GameEvent.SHOOT_CELL, { x, y });
   };
 
+  const playSound = (pointUpdates) => {
+    if (pointUpdates.length === 0) {
+      return;
+    }
+
+    const hitState = pointUpdates[0].state;
+
+    switch (hitState) {
+      case CellState.MISSED:
+        missSoundAudio.play();
+        break;
+
+      case CellState.HIT:
+        hitSoundAudio.play();
+        break;
+
+      case CellState.DESTROYED:
+        destroySoundAudio.play();
+        break;
+    }
+  };
+
   useEffect(() => {
-    initiateSocket(roomId, playerId, () => {
+    initiateSocket(roomId, playerId, playerName, () => {
       onGameEvent(GameEvent.ENEMY_READY, ({ isReady }) => {
         setEnemyReady(isReady);
       });
@@ -120,6 +156,9 @@ const useGame = (roomId, playerId, onLeaveGame) => {
           enemyReady,
           amIReady,
           enemyConnected,
+          isComputer,
+          chats,
+          enemyName,
         }) => {
           setMyStateTable(stateTable);
           setEnemyStateTable(eStateTable);
@@ -129,18 +168,27 @@ const useGame = (roomId, playerId, onLeaveGame) => {
           setEnemyReady(enemyReady);
           setAmIReady(amIReady);
           setIsEnemyConnected(enemyConnected);
+          setIsComputer(isComputer);
+          setChats(chats);
+          setEnemyName(enemyName);
         }
       );
+
+      onGameEvent(GameEvent.CHAT_MESSAGE_SENT, ({ chatMessage }) => {
+        setChats((c) => [...c, chatMessage]);
+      });
 
       onGameEvent(GameEvent.TURN_CHANGED, ({ yourTurn }) => {
         setIsMyTurn(yourTurn);
       });
 
       onGameEvent(GameEvent.SHOOT_CELL_RESULT, ({ pointUpdates }) => {
+        playSound(pointUpdates);
         updateStateTable(pointUpdates, false);
       });
 
       onGameEvent(GameEvent.CELL_SHOT, ({ pointUpdates }) => {
+        playSound(pointUpdates);
         updateStateTable(pointUpdates, true);
       });
 
@@ -166,6 +214,10 @@ const useGame = (roomId, playerId, onLeaveGame) => {
     onLeaveGame();
   };
 
+  const onMessageSent = (message) => {
+    sendGameEvent(GameEvent.CHAT_MESSAGE_SENT, { message });
+  };
+
   return [
     state,
     myStateTable,
@@ -178,10 +230,14 @@ const useGame = (roomId, playerId, onLeaveGame) => {
     onLeaveGameClick,
     amIReady,
     enemyConnected,
+    isComputer,
+    chats,
+    onMessageSent,
+    enemyName,
   ];
 };
 
-const GameScreen = ({ roomId, playerId, onLeaveGame }) => {
+const GameScreen = ({ roomId, playerId, playerName, onLeaveGame }) => {
   const [
     state,
     myStateTable,
@@ -194,7 +250,15 @@ const GameScreen = ({ roomId, playerId, onLeaveGame }) => {
     onLeaveGameClick,
     amIReady,
     enemyConnected,
-  ] = useGame(roomId, playerId, onLeaveGame);
+    isComputer,
+    chats,
+    onMessageSent,
+    enemyName,
+  ] = useGame(roomId, playerId, playerName, onLeaveGame);
+
+  const copyRoomCode = () => {
+    navigator.clipboard.writeText(roomId);
+  };
 
   let page = null;
 
@@ -224,22 +288,31 @@ const GameScreen = ({ roomId, playerId, onLeaveGame }) => {
         gState={state}
         hasWon={hasWon}
         enemyConnected={enemyConnected}
+        myName={playerName}
+        enemyName={enemyName}
       />
     );
   }
 
   return (
     <React.Fragment>
-      <RoomCodeParagraph>
-        Your room code: <b>{roomId}</b>
-      </RoomCodeParagraph>
+      {state === GameState.PICKING_SHIPS && isComputer === false && (
+        <RoomCodeParagraph onClick={copyRoomCode}>
+          <span popover-top="Click to copy me!">
+            Your room code: <b>{roomId}</b>
+          </span>
+        </RoomCodeParagraph>
+      )}
       {page}
       <LeaveButton
-        className="paper-btn margin background-secondary"
+        className="paper-btn margin background-warning"
         for="modal-1"
       >
         Leave room
       </LeaveButton>
+      {isComputer === false && (
+        <ChatWindow chats={chats} onMessageSent={onMessageSent} />
+      )}
       <input className="modal-state" id="modal-1" type="checkbox" />
       <div className="modal">
         <label className="modal-bg" for="modal-1"></label>

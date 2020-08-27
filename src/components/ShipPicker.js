@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import PlayField from "./PlayField";
 import AvailableShips from "./AvailableShips";
@@ -27,7 +27,7 @@ const MainContainer = styled.div`
   }
 `;
 
-const useShipPicker = (width, height, pickedStateTable) => {
+const useShipPicker = (width, height, pickedStateTable, amIReady) => {
   const shipsAlreadyPlaced = pickedStateTable != null;
 
   const [stateTable, setStateTable] = useState(
@@ -86,36 +86,33 @@ const useShipPicker = (width, height, pickedStateTable) => {
     }
   };
 
-  const updateStateTable = useCallback(
-    (x, y, state) => {
-      let stateTableCopy = [...stateTable];
-      stateTableCopy[x][y] = state;
-      setStateTable(stateTableCopy);
-    },
-    [stateTable]
-  );
+  const updateStateTable = (x, y, state) => {
+    let stateTableCopy = [...stateTable];
+    stateTableCopy[x][y] = state;
+    setStateTable(stateTableCopy);
+  };
 
-  const setStateOnPlacingCells = useCallback(
-    (state = CellState.UNTOUCHED, withClickedCell = false) => {
-      for (let x = 0; x < width; x++) {
-        for (let y = 0; y < height; y++) {
-          if (
-            stateTable[x][y] === CellState.SHIP_PLACING &&
-            (withClickedCell || !(x === cellClicked.x && y === cellClicked.y))
-          ) {
-            updateStateTable(x, y, state);
-          }
+  const setStateOnPlacingCells = (
+    state = CellState.UNTOUCHED,
+    withClickedCell = false
+  ) => {
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) {
+        if (
+          stateTable[x][y] === CellState.SHIP_PLACING &&
+          (withClickedCell || !(x === cellClicked.x && y === cellClicked.y))
+        ) {
+          updateStateTable(x, y, state);
         }
       }
-    },
-    [cellClicked, height, stateTable, width, updateStateTable]
-  );
+    }
+  };
 
-  const cancelPlacement = useCallback(() => {
+  const cancelPlacement = () => {
     setStateOnPlacingCells(CellState.UNTOUCHED, true);
     setCellClicked(null);
     setCellHovered(null);
-  }, [setStateOnPlacingCells]);
+  };
 
   const onCellClicked = (cell) => {
     if (allShipsPlaced) {
@@ -167,52 +164,46 @@ const useShipPicker = (width, height, pickedStateTable) => {
   };
 
   // when any cell in grid is right clicked
-  const onCellRightClicked = useCallback(
-    (cell) => {
-      // if some cell is clicked, then just cancel that cell
-      if (cellClicked) {
-        cancelPlacement();
-        return;
+  const onCellRightClicked = (cell) => {
+    if (amIReady) {
+      return;
+    }
+
+    // if some cell is clicked, then just cancel that cell
+    if (cellClicked) {
+      cancelPlacement();
+      return;
+    }
+
+    const shipPath = getShipPathAtCell(cell, stateTable);
+
+    // check if ship is placed on this cell
+    if (shipPath != null) {
+      // set all states to "untouched" where the ship used to be
+      for (let i = 0; i < shipPath.length; i++) {
+        updateStateTable(shipPath[i].x, shipPath[i].y, CellState.UNTOUCHED);
       }
 
-      const shipPath = getShipPathAtCell(cell, stateTable);
+      // add ship to capacity ships
+      // find ship with this length
+      const shipIndex = availableShips.findIndex(
+        (s) => s.length === shipPath.length && s.currentCapacity > 0 // safety check to not go in negative
+      );
 
-      // check if ship is placed on this cell
-      if (shipPath != null) {
-        // set all states to "untouched" where the ship used to be
-        for (let i = 0; i < shipPath.length; i++) {
-          updateStateTable(shipPath[i].x, shipPath[i].y, CellState.UNTOUCHED);
+      // if ship exists (it should)
+      if (shipIndex >= 0) {
+        // remove capacity
+        availableShips[shipIndex].currentCapacity--;
+
+        // if all ships were placed, change this to not all ships placed
+        if (allShipsPlaced === true) {
+          setAllShipsPlaced(false);
         }
 
-        // add ship to capacity ships
-        // find ship with this length
-        const shipIndex = availableShips.findIndex(
-          (s) => s.length === shipPath.length && s.currentCapacity > 0 // safety check to not go in negative
-        );
-
-        // if ship exists (it should)
-        if (shipIndex >= 0) {
-          // remove capacity
-          availableShips[shipIndex].currentCapacity--;
-
-          // if all ships were placed, change this to not all ships placed
-          if (allShipsPlaced === true) {
-            setAllShipsPlaced(false);
-          }
-
-          setAvailableShips(availableShips);
-        }
+        setAvailableShips(availableShips);
       }
-    },
-    [
-      allShipsPlaced,
-      availableShips,
-      cancelPlacement,
-      cellClicked,
-      stateTable,
-      updateStateTable,
-    ]
-  );
+    }
+  };
 
   return [
     onCellClicked,
@@ -240,11 +231,11 @@ const ShipPicker = ({
     stateTable,
     availableShips,
     allShipsPlaced,
-  ] = useShipPicker(width, height, pickedStateTable);
+  ] = useShipPicker(width, height, pickedStateTable, amIReady);
 
   let readyState = "";
   if (!enemyConnected) {
-    readyState = "Enemy not connected yet. ";
+    readyState = "Enemy is not in the room. ";
   } else {
     if (enemyReady) {
       readyState = "Enemy is ready. ";
@@ -255,11 +246,15 @@ const ShipPicker = ({
 
   if (amIReady) {
     readyState += "You are ready!";
+  } else {
+    readyState += "You are picking.";
   }
 
   return (
     <Container>
-      <p>Pick your ships. Choose carefully!</p>
+      <p>
+        Pick your ships. Choose carefully! (right click on ship to remove it)
+      </p>
 
       <MainContainer>
         <PlayField
