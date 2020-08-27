@@ -1,4 +1,6 @@
-export const apiUrl = "http://localhost:8080";
+import config from "../config";
+
+const apiUrl = config.apiUrl;
 
 export const doesRoomExistAndIsPlayerInside = async (roomId, playerId) => {
   const requestOptions = {

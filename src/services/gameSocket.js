@@ -1,15 +1,13 @@
 import io from "socket.io-client";
 import { GameEvent } from "../models/GameEvent";
+import config from "../config";
+
 let socket;
+const apiUrl = config.apiUrl;
 
 export const initiateSocket = (roomId, playerId, playerName, cb) => {
   socket = io(
-    "http://localhost:8080/room?roomId=" +
-      roomId +
-      "&playerId=" +
-      playerId +
-      "&playerName=" +
-      playerName
+    `${apiUrl}/room?roomId=${roomId}&playerId=${playerId}&playerName=${playerName}`
   );
 
   socket.on(GameEvent.CONNECT, cb);
