@@ -2,10 +2,14 @@ import React from "react";
 import ShipCell from "./ShipCell";
 
 import styled from "styled-components";
+import { tabletBreakpoint } from "../styles";
 
 const Table = styled.table`
-  margin: 0px 30px 30px 30px;
   width: unset;
+
+  @media (min-width: ${tabletBreakpoint}) {
+    margin: 0px 30px 30px 30px;
+  }
 `;
 
 const PlayFieldContainer = styled.div`

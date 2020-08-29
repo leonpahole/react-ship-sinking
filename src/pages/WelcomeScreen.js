@@ -23,6 +23,7 @@ const OptionBox = styled.div`
 
 const InputButtonContainer = styled.div`
   display: flex;
+  justify-content: center;
 
   @media (max-width: ${mobileBreakpoint}) {
     flex-direction: column;
@@ -47,6 +48,20 @@ const WelcomeScreen = ({
 }) => {
   const [roomCode, setRoomCode] = useState();
 
+  const onJoinButtonClick = () => {
+    if (!roomCode || roomCode.length === 0) {
+      return;
+    }
+
+    onPlayAgainstFriend(roomCode);
+  };
+
+  const onRoomCodeInputKeyDown = (e) => {
+    if (e.key === "Enter") {
+      onJoinButtonClick();
+    }
+  };
+
   return (
     <Container>
       <p>Hello there, {playerName}. I've been expecting you.</p>
@@ -65,12 +80,11 @@ const WelcomeScreen = ({
           <InputButtonContainer>
             <input
               onChange={(e) => setRoomCode(e.target.value)}
+              onKeyDown={onRoomCodeInputKeyDown}
               type="text"
               placeholder="Room code!"
             />
-            <JoinButton onClick={() => onPlayAgainstFriend(roomCode)}>
-              Join
-            </JoinButton>
+            <JoinButton onClick={onJoinButtonClick}>Join</JoinButton>
           </InputButtonContainer>
 
           <p>... or ...</p>

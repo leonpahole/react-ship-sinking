@@ -2,6 +2,7 @@ import React from "react";
 import PlayField from "./PlayField";
 import styled from "styled-components";
 import { GameState } from "../models/GameState";
+import { tabletBreakpoint } from "../styles";
 
 const MainContainer = styled.div`
   display: flex;
@@ -13,10 +14,19 @@ const Container = styled.div`
   margin-top: 10px;
   display: flex;
   justify-content: center;
+
+  @media (max-width: ${tabletBreakpoint}) {
+    flex-direction: column;
+  }
 `;
 
 const VsHeading = styled.h4`
   margin: unset;
+  text-align: center;
+
+  @media (max-width: ${tabletBreakpoint}) {
+    margin-bottom: 10px;
+  }
 `;
 
 const useGame = (isMyTurn, onCellShot, gState) => {

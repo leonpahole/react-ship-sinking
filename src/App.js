@@ -35,6 +35,7 @@ const usePage = () => {
   const [currentPage, setCurrentPage] = useState(null);
   const [roomId, setRoomId] = useState(null);
   const [playerId, setPlayerId] = useState(null);
+  const [wrongRoomCodeModalOpen, setWrongRoomCodeModalOpen] = useState(false);
 
   // check localstorage and determine which page to go to
   useEffect(() => {
@@ -95,6 +96,10 @@ const usePage = () => {
     setStateForMainScreen(name);
   };
 
+  const closeWrongRoomCodeModal = () => {
+    setWrongRoomCodeModalOpen(false);
+  };
+
   // when player clicks on create room (with player or computer)
   const onCreateRoom = async (isComputer) => {
     const { roomId, playerId } = await createRoom(isComputer);
@@ -103,7 +108,7 @@ const usePage = () => {
       localStorage.setItem(LocalStorageItem.PLAYER_ID, playerId);
       setStateForGameScreen(roomId, playerId);
     } else {
-      alert("Something went wrong!");
+      setWrongRoomCodeModalOpen(true);
     }
   };
 
@@ -114,7 +119,7 @@ const usePage = () => {
       localStorage.setItem(LocalStorageItem.PLAYER_ID, playerId);
       setStateForGameScreen(roomId, playerId);
     } else {
-      alert("Room is full or doesn't exist!");
+      setWrongRoomCodeModalOpen(true);
     }
   };
 
@@ -138,6 +143,8 @@ const usePage = () => {
     roomId,
     playerId,
     onLeaveGame,
+    wrongRoomCodeModalOpen,
+    closeWrongRoomCodeModal,
   ];
 };
 
@@ -152,6 +159,8 @@ const App = () => {
     roomId,
     playerId,
     onLeaveGame,
+    wrongRoomCodeModalOpen,
+    closeWrongRoomCodeModal,
   ] = usePage();
 
   let page = null;
@@ -185,6 +194,39 @@ const App = () => {
     <AppContainer>
       <TitleHeading>Ship sinking.</TitleHeading>
       {page}
+
+      <input
+        checked={wrongRoomCodeModalOpen}
+        className="modal-state"
+        id="modal-1"
+        type="checkbox"
+      />
+      <div className="modal">
+        <label className="modal-bg" for="modal-1"></label>
+        <div className="modal-body">
+          <label
+            onClick={closeWrongRoomCodeModal}
+            className="btn-close"
+            for="modal-1"
+          >
+            X
+          </label>
+          <h4 className="modal-title">Wrong join code!</h4>
+          <p className="modal-text">
+            Room doesn't exist or it is already full! Double check the room code
+            you entered.
+          </p>
+          <div>
+            <label
+              onClick={closeWrongRoomCodeModal}
+              for="modal-1"
+              className="paper-btn margin"
+            >
+              Got it.
+            </label>
+          </div>
+        </div>
+      </div>
     </AppContainer>
   );
 };

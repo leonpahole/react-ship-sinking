@@ -11,6 +11,9 @@ import {
 } from "../models/CellState";
 import { initialShips } from "../models/Ships";
 import { tabletBreakpoint } from "../styles";
+import clickSound from "../assets/sounds/click.mp3";
+import placeSound from "../assets/sounds/place.mp3";
+import removeSound from "../assets/sounds/remove.mp3";
 
 const Container = styled.div`
   display: flex;
@@ -39,6 +42,15 @@ const useShipPicker = (width, height, pickedStateTable, amIReady) => {
     initialShips(shipsAlreadyPlaced)
   );
   const [allShipsPlaced, setAllShipsPlaced] = useState(shipsAlreadyPlaced);
+  const [clickSoundAudio] = useState(new Audio(clickSound));
+  const [placeSoundAudio] = useState(new Audio(placeSound));
+  const [removeSoundAudio] = useState(new Audio(removeSound));
+
+  const pauseAllSounds = () => {
+    clickSoundAudio.pause();
+    placeSoundAudio.pause();
+    removeSoundAudio.pause();
+  };
 
   const getMaxShipLength = () => {
     if (allShipsPlaced) {
@@ -83,6 +95,9 @@ const useShipPicker = (width, height, pickedStateTable, amIReady) => {
 
       setCellClicked(null);
       setCellHovered(null);
+
+      pauseAllSounds();
+      placeSoundAudio.play();
     }
   };
 
@@ -123,6 +138,9 @@ const useShipPicker = (width, height, pickedStateTable, amIReady) => {
       if (canCellBePlaced(cell.x, cell.y, stateTable) === true) {
         setCellClicked({ x: cell.x, y: cell.y });
         updateStateTable(cell.x, cell.y, CellState.SHIP_PLACING);
+
+        pauseAllSounds();
+        clickSoundAudio.play();
       }
     } else {
       const path = getCellPath(
@@ -158,6 +176,9 @@ const useShipPicker = (width, height, pickedStateTable, amIReady) => {
       for (let i = 0; i < path.length; i++) {
         updateStateTable(path[i].x, path[i].y, CellState.SHIP_PLACING);
       }
+
+      pauseAllSounds();
+      clickSoundAudio.play();
     }
 
     setCellHovered({ x: cell.x, y: cell.y });
@@ -201,6 +222,9 @@ const useShipPicker = (width, height, pickedStateTable, amIReady) => {
         }
 
         setAvailableShips(availableShips);
+
+        pauseAllSounds();
+        removeSoundAudio.play();
       }
     }
   };

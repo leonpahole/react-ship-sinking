@@ -1,13 +1,25 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { mobileBreakpoint, Button } from "../styles";
 import ChatMessage from "./ChatMessage";
 
 const ChatContainer = styled.div`
+  ${(props) => !props.isChatHidden && "height: 60vh;"}
+  ${(props) =>
+    !props.isChatHidden &&
+    "min-width: 17vw;"}
+
+  @media (max-width: ${mobileBreakpoint}) {
+    ${(props) => !props.isChatHidden && "height: 70vh;"}
+    ${(props) => !props.isChatHidden && "width: 80vw;"}
+  }
+
   position: fixed;
   right: 20px;
   bottom: 20px;
-  ${(props) => !props.isChatHidden && "width: 17vw;"}
+  background: white;
+  display: flex;
+  flex-direction: column;
 `;
 
 const ChatTopBar = styled.div`
@@ -15,6 +27,7 @@ const ChatTopBar = styled.div`
   justify-content: flex-start;
   align-items: center;
   flex-direction: column;
+  cursor: pointer;
 `;
 
 const ChatHeading = styled.h2`
@@ -23,13 +36,15 @@ const ChatHeading = styled.h2`
 
 const ChatClickToHideMe = styled.h5`
   margin: unset;
-  cursor: pointer;
   ${(props) => props.isChatHidden && "padding: 20px;"}
+  ${(props) =>
+    props.newMessagesAvailable && "background: #a7342d; color: white;"}
 `;
 
 const ChatBodyContainer = styled.div`
-  height: 40vh;
   display: flex;
+  flex: 1;
+  overflow: auto;
   flex-direction: column;
   justify-content: space-between;
   padding: 20px;
@@ -60,13 +75,14 @@ const SendButton = styled(Button)`
 `;
 
 const MessageInput = styled.input`
-  width: 70%;
+  width: 100%;
 `;
 
 const useChat = (chats, onMessageSent) => {
-  const [isChatHidden, setIsChatHidden] = useState(false);
+  const [isChatHidden, setIsChatHidden] = useState(true);
   const [message, setMessage] = useState("");
   const [chatDiv, setChatDiv] = useState(null);
+  const [newMessagesAvailable, setNewMessagesAvailable] = useState(false);
 
   const chatDivRef = useCallback((node) => {
     setChatDiv(node);
@@ -81,6 +97,7 @@ const useChat = (chats, onMessageSent) => {
 
     if (!newState) {
       scrollToBottom();
+      setNewMessagesAvailable(false);
     }
   };
 
@@ -100,6 +117,9 @@ const useChat = (chats, onMessageSent) => {
 
   useEffect(() => {
     scrollToBottom();
+    if (isChatHidden) {
+      setNewMessagesAvailable(true);
+    }
   }, [chats]);
 
   const scrollToBottom = () => {
@@ -120,6 +140,7 @@ const useChat = (chats, onMessageSent) => {
     chatDivRef,
     onMessageInputKeyDown,
     onSendButtonClick,
+    newMessagesAvailable,
   ];
 };
 
@@ -132,15 +153,16 @@ const ChatWindow = ({ chats, onMessageSent }) => {
     chatDivRef,
     onMessageInputKeyDown,
     onSendButtonClick,
+    newMessagesAvailable,
   ] = useChat(chats, onMessageSent);
 
   return (
     <ChatContainer isChatHidden={isChatHidden} className="border border-4">
-      <ChatTopBar>
+      <ChatTopBar onClick={toggleChat}>
         {!isChatHidden && <ChatHeading>CHAT</ChatHeading>}
         <ChatClickToHideMe
+          newMessagesAvailable={newMessagesAvailable}
           isChatHidden={isChatHidden}
-          onClick={toggleChat}
           className="text-secondary"
         >
           {isChatHidden ? "Show chat" : "(click to hide me)"}

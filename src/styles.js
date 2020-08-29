@@ -2,7 +2,7 @@ import styled, { css } from "styled-components";
 
 export const mobileBreakpoint = "460px";
 
-export const tabletBreakpoint = "740px";
+export const tabletBreakpoint = "770px";
 
 export const baseHeadingStyles = css`
   text-align: center;

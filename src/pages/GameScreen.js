@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { GameState } from "../models/GameState";
 import GameInProgress from "../components/GameInProgress";
 import ShipPicker from "../components/ShipPicker";
@@ -13,14 +13,20 @@ import {
 } from "../services/gameSocket";
 import LoadingScreen from "./LoadingScreen";
 import ChatWindow from "../components/ChatWindow";
-import useSound from "use-sound";
 
 import destroySound from "../assets/sounds/destroy.mp3";
 import hitSound from "../assets/sounds/hit.mp3";
 import missSound from "../assets/sounds/miss.mp3";
+import { tabletBreakpoint } from "../styles";
 
 const WIDTH = 10,
   HEIGHT = 10;
+
+const Container = styled.div`
+  @media (max-width: ${tabletBreakpoint}) {
+    margin-bottom: 70px;
+  }
+`;
 
 const RoomCodeParagraph = styled.p`
   text-align: center;
@@ -31,11 +37,16 @@ const LeaveButton = styled.label`
   position: fixed;
   bottom: 20px;
   left: 20px;
+  margin: unset;
   background: #deefff;
 `;
 
 const YepButton = styled.label`
   background: #f0cbc9 !important;
+`;
+
+const LeaveRoomButton = styled.label`
+  background: #deefff !important;
 `;
 
 const ModalButtonsContainer = styled.div`
@@ -50,15 +61,23 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
   const [enemyStateTable, setEnemyStateTable] = useState(null);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [hasWon, setHasWon] = useState(false);
+  const [enemyLeft, setEnemyLeft] = useState(false);
   const [amIReady, setAmIReady] = useState(false);
   const [enemyConnected, setIsEnemyConnected] = useState(false);
   const [isComputer, setIsComputer] = useState(null);
   const [chats, setChats] = useState([]);
   const [enemyName, setEnemyName] = useState(null);
+  const [youWonOrLostModalOpen, setYouWonOrLostModalOpen] = useState(false);
 
   const [missSoundAudio] = useState(new Audio(missSound));
   const [hitSoundAudio] = useState(new Audio(hitSound));
   const [destroySoundAudio] = useState(new Audio(destroySound));
+
+  const pauseAllSounds = () => {
+    missSoundAudio.pause();
+    hitSoundAudio.pause();
+    destroySoundAudio.pause();
+  };
 
   const updateStateTable = (pointUpdates, mine = true) => {
     if (mine) {
@@ -115,6 +134,8 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
     }
 
     const hitState = pointUpdates[0].state;
+
+    pauseAllSounds();
 
     switch (hitState) {
       case CellState.MISSED:
@@ -195,12 +216,14 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
       onGameEvent(GameEvent.GAME_OVER, ({ hasWon }) => {
         setState((s) => GameState.FINISHED);
         setHasWon((w) => hasWon);
+        setYouWonOrLostModalOpen(true);
       });
 
       onGameEvent(GameEvent.ENEMY_LEFT, () => {
         setState((s) => GameState.FINISHED);
         setHasWon((w) => true);
-        alert("Enemy has left, you won!");
+        setEnemyLeft((w) => true);
+        setYouWonOrLostModalOpen(true);
       });
     });
 
@@ -218,6 +241,10 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
     sendGameEvent(GameEvent.CHAT_MESSAGE_SENT, { message });
   };
 
+  const closeYouWonOrLostModal = () => {
+    setYouWonOrLostModalOpen(false);
+  };
+
   return [
     state,
     myStateTable,
@@ -227,6 +254,7 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
     onCellShot,
     enemyStateTable,
     hasWon,
+    enemyLeft,
     onLeaveGameClick,
     amIReady,
     enemyConnected,
@@ -234,6 +262,8 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
     chats,
     onMessageSent,
     enemyName,
+    youWonOrLostModalOpen,
+    closeYouWonOrLostModal,
   ];
 };
 
@@ -247,6 +277,7 @@ const GameScreen = ({ roomId, playerId, playerName, onLeaveGame }) => {
     onCellShot,
     enemyStateTable,
     hasWon,
+    enemyLeft,
     onLeaveGameClick,
     amIReady,
     enemyConnected,
@@ -254,6 +285,8 @@ const GameScreen = ({ roomId, playerId, playerName, onLeaveGame }) => {
     chats,
     onMessageSent,
     enemyName,
+    youWonOrLostModalOpen,
+    closeYouWonOrLostModal,
   ] = useGame(roomId, playerId, playerName, onLeaveGame);
 
   const copyRoomCode = () => {
@@ -295,7 +328,7 @@ const GameScreen = ({ roomId, playerId, playerName, onLeaveGame }) => {
   }
 
   return (
-    <React.Fragment>
+    <Container>
       {state === GameState.PICKING_SHIPS && isComputer === false && (
         <RoomCodeParagraph onClick={copyRoomCode}>
           <span popover-top="Click to copy me!">
@@ -338,7 +371,54 @@ const GameScreen = ({ roomId, playerId, playerName, onLeaveGame }) => {
           </ModalButtonsContainer>
         </div>
       </div>
-    </React.Fragment>
+
+      <input
+        checked={youWonOrLostModalOpen}
+        className="modal-state"
+        id="modal-2"
+        type="checkbox"
+      />
+      <div className="modal">
+        <label className="modal-bg" for="modal-2"></label>
+        <div className="modal-body">
+          <label
+            onClick={closeYouWonOrLostModal}
+            className="btn-close"
+            for="modal-2"
+          >
+            X
+          </label>
+          <h4 className="modal-title">
+            {playerName}, {hasWon ? "you won!" : "you lost!"}
+          </h4>
+          <p className="modal-text">
+            {enemyLeft
+              ? `${enemyName} has left,`
+              : hasWon
+              ? `You destroyed all ${enemyName}'s ships,`
+              : `${enemyName} destroyed all your ships,`}{" "}
+            you {hasWon ? "won" : "lost"}!{" "}
+            {hasWon ? "You earned a hug" : "Better luck next time"}.
+          </p>
+          <ModalButtonsContainer>
+            <label
+              for="modal-2"
+              className="paper-btn margin background-success"
+              onClick={closeYouWonOrLostModal}
+            >
+              {hasWon ? "Yay!" : ":("}
+            </label>
+            <LeaveRoomButton
+              for="modal-2"
+              className="paper-btn margin background-secondary"
+              onClick={onLeaveGameClick}
+            >
+              Leave the room
+            </LeaveRoomButton>
+          </ModalButtonsContainer>
+        </div>
+      </div>
+    </Container>
   );
 };
 
