@@ -158,8 +158,9 @@ const useGame = (roomId, playerId, playerName, onLeaveGame) => {
         setEnemyReady(isReady);
       });
 
-      onGameEvent(GameEvent.ENEMY_CONNECTED_TO_ROOM, () => {
+      onGameEvent(GameEvent.ENEMY_CONNECTED_TO_ROOM, ({ enemyName }) => {
         setIsEnemyConnected(true);
+        setEnemyName(enemyName);
       });
 
       onGameEvent(GameEvent.ENEMY_DISCONNECTED_FROM_ROOM, () => {
@@ -307,6 +308,7 @@ const GameScreen = ({ roomId, playerId, playerName, onLeaveGame }) => {
         pickedStateTable={myStateTable}
         amIReady={amIReady}
         enemyConnected={enemyConnected}
+        enemyName={enemyName}
       />
     );
   } else if (myStateTable != null && enemyStateTable != null) {

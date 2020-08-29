@@ -247,6 +247,7 @@ const ShipPicker = ({
   pickedStateTable,
   amIReady,
   enemyConnected,
+  enemyName,
 }) => {
   const [
     onCellClicked,
@@ -257,14 +258,22 @@ const ShipPicker = ({
     allShipsPlaced,
   ] = useShipPicker(width, height, pickedStateTable, amIReady);
 
+  const getEnemyName = () => {
+    if (enemyName) {
+      return enemyName;
+    }
+
+    return "Enemy";
+  };
+
   let readyState = "";
   if (!enemyConnected) {
-    readyState = "Enemy is not in the room. ";
+    readyState = getEnemyName() + " is not in the room. ";
   } else {
     if (enemyReady) {
-      readyState = "Enemy is ready. ";
+      readyState = getEnemyName() + " is ready. ";
     } else {
-      readyState = "Enemy is picking. ";
+      readyState = getEnemyName() + " is picking. ";
     }
   }
 
